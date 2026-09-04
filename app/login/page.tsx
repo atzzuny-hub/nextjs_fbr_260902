@@ -1,7 +1,10 @@
+import LoginForm from "./_components/login-form";
 
 
 export default function LoginPage(){
     return(
-        <div>로그인</div>
+        <div className="min-h-svh flex justify-center items-center">
+            <LoginForm/>
+        </div>
     )
 }
