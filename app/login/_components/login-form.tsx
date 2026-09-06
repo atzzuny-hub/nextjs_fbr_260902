@@ -28,14 +28,17 @@ export default function LoginForm(){
                 <CardContent>
                     <div className="flex flex-col gap-6">
                         <div className="grid gap-2">
-                        <Label htmlFor="email">Email</Label>
-                        <Input
-                            id="email"
-                            type="email"
-                            placeholder="m@example.com"
-                            name="email"
-                            required
-                        />
+                            <Label htmlFor="email">Email</Label>
+                            <Input
+                                id="email"
+                                type="email"
+                                placeholder="m@example.com"
+                                name="email"
+                                required
+                            />
+                            {state?.fieldErrors?.email && (
+                                <p className="text-sm text-destructive">{state.fieldErrors.email}</p>
+                            )}
                         </div>
                         <div className="grid gap-2">
                         <div className="flex items-center">
@@ -53,6 +56,9 @@ export default function LoginForm(){
                             required 
                             name="password"
                         />
+                        {state?.fieldErrors?.password && (
+                            <p className="text-sm text-destructive">{state.fieldErrors.password}</p>
+                        )}
                         </div>
                     </div>
                     {state?.error && <p className="mt-5 text-destructive">{state.error}</p>}

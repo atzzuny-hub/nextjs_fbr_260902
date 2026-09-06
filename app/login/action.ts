@@ -2,13 +2,34 @@
 
 import { createSession, deleteSession } from "@/lib/session";
 import { redirect } from "next/navigation";
+import { loginSchema } from "./schema";
 
 export async function login(prevState: unknown, formData: FormData) {
-    const email = formData.get("email");
-    const password = formData.get("password");
-    if (!email || !password) return { error: "이메일, 비밀번호를 입력해주세요." };
+    
+    // const email = formData.get("email");
+    // const password = formData.get("password");
+    // if (!email || !password) return { error: "이메일, 비밀번호를 입력해주세요." };
 
-    const res = await fetch(`${process.env.API_URL}/auth/login`, {  // NEXT_PUBLIC_ 불필요
+    const parsed = loginSchema.safeParse({
+        email: formData.get("email"),
+        password: formData.get("password")
+    })
+
+    if(!parsed.success){
+
+        const fieldErrors: Record<string, string> = {};
+        for( const issue of parsed.error.issues){
+            const field = String(issue.path[0]);
+            fieldErrors[field] ??= issue.message
+        }
+        return {fieldErrors}
+    }
+
+    const {email, password} = parsed.data;
+
+    // ...기존 fetch → createSession → redirect 그대로...
+
+    const res = await fetch(`${process.env.API_URL}/auth/login`, { 
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -16,14 +37,14 @@ export async function login(prevState: unknown, formData: FormData) {
 
     if (!res.ok) return { error: "이메일, 비밀번호를 확인해주세요" };
 
-    const data = await res.json();   // body는 한 번만 읽을 수 있다!
+    const data = await res.json();  
 
-    const { accessToken } = data;    // 실제 응답 필드명 확인 필수 (token 아님)
+    const { accessToken } = data;   
     await createSession(accessToken, data.refreshToken, { name: data.name, email: data.email });
-    redirect("/dashboard");          // throw 방식 — 이 뒤 코드는 실행 안 됨
+    redirect("/dashboard");          
 }
 
 export async function logout() {
-    await deleteSession();     // 도구함에서 지우개 꺼내 쓰기 — 반드시 먼저!
-    redirect("/login");        // redirect는 throw 방식 — 이 뒤 코드는 실행 안 됨
+    await deleteSession();    
+    redirect("/login");       
 }
