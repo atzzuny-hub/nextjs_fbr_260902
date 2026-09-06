@@ -3,45 +3,14 @@
 import { Avatar, AvatarBadge, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useRouter } from "next/navigation";
-import { useAuth } from "./auth-provider";
+import { logout } from "@/app/login/action";
+import { SessionUser } from "@/lib/session";
+import { startTransition } from "react";
 
 
 
-export default function MypageMenu(){
+export default function MypageMenu({user}:{ user:SessionUser | null}){
 
-    const { user, setUser } = useAuth()
-    const router = useRouter()
-
-    const handleClickLogout = async() => {
-
-        if (!user) return;
-
-        try{
-            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`,{
-                method: 'POST',
-                headers:{
-                    "Content-Type" : "application/json",
-                    "Authorization": `Bearer ${user.accessToken}`
-                },
-                body: JSON.stringify({
-                    refreshToken: user.refreshToken
-                })
-            })
-
-        }catch(err){
-            console.log(err);            
-        }finally{
-            setUser(null)
-            router.replace('/login')
-        }
-    }
-
-    
-    
-
- 
-    
     return(
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -61,7 +30,7 @@ export default function MypageMenu(){
                     </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                    <DropdownMenuItem onClick={handleClickLogout}>
+                    <DropdownMenuItem onClick={() => startTransition(() => logout())}>
                         Log out
                     </DropdownMenuItem>
                 </DropdownMenuGroup>

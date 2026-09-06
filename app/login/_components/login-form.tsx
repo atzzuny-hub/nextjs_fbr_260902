@@ -4,25 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useState } from "react";
-import { LoginResponse } from "../types";
+import { useActionState } from "react";
 import { login } from "../action";
 
 
 
 export default function LoginForm(){
 
-    const router = useRouter()
-    const [email, setEmail] = useState<string>('')
-    const [password, setPassword] = useState<string>('')
-    const [loading, setLoading] = useState<boolean>(false)
-    const [errMessage, setErrMessage] = useState<string>('')
-
-
     const [state, action, pending] = useActionState(login, undefined)
-
-
   
     return(
         <Card className="w-full max-w-sm">
@@ -66,10 +55,10 @@ export default function LoginForm(){
                         />
                         </div>
                     </div>
-                    {state?.error && <p className="mt-5 text-destructive">{errMessage}</p>}
+                    {state?.error && <p className="mt-5 text-destructive">{state.error}</p>}
                 </CardContent>
                 <CardFooter className="flex-col gap-2 mt-5">
-                    <Button type="submit" className="w-full" disabled={loading}>
+                    <Button type="submit" className="w-full" disabled={pending}>
                         {pending ? '로그인중...' : '로그인'}
                     </Button>
                 </CardFooter>
@@ -77,3 +66,4 @@ export default function LoginForm(){
         </Card>
     )
 }
+
