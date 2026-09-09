@@ -78,6 +78,7 @@ export default async function DtinPage({ searchParams }: {
                 }
                 search={
                     <SearchPanel 
+                        key={JSON.stringify(sp)}
                         action='/dtin' 
                         detailOpen={!!(sp.search || sp.status)} 
                         detail={
@@ -87,7 +88,7 @@ export default async function DtinPage({ searchParams }: {
                                     name="status" 
                                     defaultValue={sp.status ? sp.status : "ALL"} 
                                     data={ORDER_STATUS_OPTIONS} 
-                                    label={"ORDER STATUS"}
+                                    label={"입고상태"}
                                 />
                             </>
                         }
