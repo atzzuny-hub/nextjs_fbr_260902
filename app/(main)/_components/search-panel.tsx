@@ -44,17 +44,17 @@ export default function SearchPanel({action, children, detail, detailOpen}:Searc
     };
     
     return(
-        <Form action={action} onSubmit={handleSubmit} className=" rounded-lg border p-4 mt-2" >
+        <Form action={action} onSubmit={handleSubmit} className=" rounded-lg border py-4 px-2 mt-2" >
             <div className="flex items-center gap-2">
                 <div key={resetCount} className="flex gap-2">
                     {children}
                 </div>
                 
-                <div className="flex">
+                <div className="ml-auto flex items-center gap-2">
                     <Button type="button" variant="link" asChild>
                         <Link href={action} onClick={handleClickReset}>초기화</Link>
                     </Button>
-                    <Button type="submit">조회</Button>
+                    <Button variant='outline' type="submit">조회</Button>
                 </div>
             </div>
 
@@ -63,12 +63,13 @@ export default function SearchPanel({action, children, detail, detailOpen}:Searc
                     <Collapsible
                         open={isOpen}
                         onOpenChange={setIsOpen}
-                        className="flex flex-col gap-2"
+                        className="flex flex-col"
                     >
-                        <div className="flex items-center px-4 justify-end">
-                            <h4 className="text-sm font-semibold">Detailed Search</h4>
+                        <div className="ml-auto flex items-center mb-2">
+                            {/* <h4 className="text-sm font-semibold">Detailed Search</h4> */}
                             <CollapsibleTrigger asChild>
-                                <Button variant="ghost" size="icon" className="size-8">
+                                <Button variant="link" >
+                                    Detailed Search
                                     {isOpen ? <ChevronsUp /> : <ChevronsDown />}
                                     <span className="sr-only">Toggle details</span>
                                 </Button>
