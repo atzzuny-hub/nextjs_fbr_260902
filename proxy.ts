@@ -13,5 +13,6 @@ export default async function proxy(request: NextRequest) {
 
 export const config = {
     // 제외 패턴 필수 — 없으면 CSS/이미지 요청까지 로그인으로 리다이렉트됨
-    matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\\.png$).*)"],
+    // table-demo: 포스팅 예제용 공개 놀이터 (인증 가드 제외)
+    matcher: ["/((?!table-demo|api|_next/static|_next/image|favicon.ico|.*\\.png$).*)"],
 };
