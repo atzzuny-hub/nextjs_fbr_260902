@@ -5,35 +5,17 @@ import PageShell from "../_components/page-shell";
 import WmsLinkIdSelect from "../_components/wmslinkid-select";
 import SearchPanel from "../_components/search-panel";
 import DatePicker from "../_components/date-picker";
-import { formatDateTime, getDefaultDateRange, toEpochSec } from "@/lib/date-range";
+import { getDefaultDateRange, toEpochSec } from "@/lib/date-range";
 import CommonSelect from "../_components/common-select";
 import CommonInput from "../_components/common-input";
-import { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-
-const SEARCH_DT_OPTIONS = [
-    {value: 'REQ_DT', label: '입고접수일' },
-    {value: 'WRHS_DT', label: '창고도착일' },
-    {value: 'CMPL_DT', label: '입고완료일' }
-]
-
-const ORDER_STATUS_OPTIONS = [
-    // options 확장 — value/label/badge가 한 줄에 (상태 지식의 단일 출처)
-    { value: "ALL",       label: "전체",     badge: "" },
-    { value: "PLAN",      label: "예정",     badge: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300" },
-    { value: "STANDBY",   label: "대기",     badge: "bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-300" },
-    { value: "WORK",      label: "작업중",   badge: "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300" },
-    { value: "COMPLETED", label: "입고",     badge: "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300" },
-    { value: "CANCELED",  label: "취소",     badge: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300" },
-    { value: "UNKNOW",    label: "알수없음", badge: "bg-muted text-muted-foreground" },
-];
+import { ORDER_STATUS_OPTIONS, SEARCH_DT_OPTIONS } from "./options";
+import { DataTable } from "../_components/data-table";
+import { columns } from "./columns";
 
 
 export default async function DtinPage({ searchParams }: {
     searchParams: Promise<{ wmsLinkId?: string, startDt?:string, endDt?:string, searchDt:string, search?:string, status?:string }>;
 }){
-
     const  sp  = await searchParams;
 
     const { todayStr, weekAgoStr } = getDefaultDateRange();  
@@ -69,16 +51,6 @@ export default async function DtinPage({ searchParams }: {
 
 
     }     
-
-    console.log(Object.keys(data[0]))
-
-    const flag = (cc: string) =>
-    /^[A-Z]{2}$/.test(cc)
-        ? cc.replace(/./g, (c) => String.fromCodePoint(127397 + c.charCodeAt(0)))
-        : "";   // 모르는 형식이면 국기 생략, 코드만
-
-    const statusOf = (s:string) => ORDER_STATUS_OPTIONS.find((o) => o.value === s) ?? {label:s, badge: "bg-muted text-muted-foreground"}
-    
 
     return(
         <div>
@@ -126,35 +98,7 @@ export default async function DtinPage({ searchParams }: {
                     ) : (
                         <div>
                             조회 결과 {data.length}건
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>주문번호</TableHead>
-                                        <TableHead>접수번호</TableHead>
-                                        <TableHead>입고상태</TableHead>
-                                        <TableHead >국가</TableHead>
-                                        <TableHead>입고접수일</TableHead>
-                                        <TableHead>창고도착일</TableHead>
-                                        <TableHead>WMS Link</TableHead>
-                                        <TableHead>입고완료일</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {data.map((inbound) => (
-                                        <TableRow key={inbound.idx}>
-                                            <TableCell className="font-medium">{inbound.ganNo}</TableCell>
-                                            <TableCell>{inbound.dataId}</TableCell>
-                                            <TableCell><Badge variant='ghost' className={cn("border-transparent", statusOf(inbound.status).badge)}>{statusOf(inbound.status).label}</Badge></TableCell>
-                                            <TableCell>{flag(inbound.cntyCd)} {inbound.cntyCd}</TableCell>
-
-                                            <TableCell>{formatDateTime(inbound.reqDt)}</TableCell>
-                                            <TableCell>{formatDateTime(inbound.arvDt)}</TableCell>
-                                            <TableCell>{inbound.wmsLinkName}</TableCell>
-                                            <TableCell>{formatDateTime(inbound.dataUpdDt)}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                            <DataTable columns={columns} data={data}/>
                         </div>
                 )}
             </PageShell>
