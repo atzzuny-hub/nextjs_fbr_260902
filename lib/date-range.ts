@@ -14,5 +14,5 @@ export function formatDateTime(epochSec: number|null|undefined){
 
     if(!epochSec) return '-'
     const d = new Date(epochSec * 1000)
-    return `${toDateStr(d)} ${String(d.getMonth()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`
+    return `${toDateStr(d)} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`
 }
