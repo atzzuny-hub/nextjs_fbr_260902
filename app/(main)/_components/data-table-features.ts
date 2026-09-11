@@ -1,4 +1,7 @@
-import { tableFeatures } from "@tanstack/react-table";
+import { createExpandedRowModel, rowExpandingFeature, tableFeatures } from "@tanstack/react-table";
 
-export const features = tableFeatures({})
+export const features = tableFeatures({
+    rowExpandingFeature,
+    expandedRowModel:createExpandedRowModel()
+})
 export type DataTableFeatures = typeof features
