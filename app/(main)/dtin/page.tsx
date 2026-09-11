@@ -10,7 +10,7 @@ import CommonSelect from "../_components/common-select";
 import CommonInput from "../_components/common-input";
 import { ORDER_STATUS_OPTIONS, SEARCH_DT_OPTIONS } from "./options";
 import { DataTable } from "../_components/data-table";
-import { columns } from "./columns";
+import { columns, renderSubRow } from "./columns";
 
 
 export default async function DtinPage({ searchParams }: {
@@ -23,8 +23,6 @@ export default async function DtinPage({ searchParams }: {
     const startDate = sp.startDt && !isNaN(new Date(sp.startDt).getTime()) ? sp.startDt : weekAgoStr
     const endDate = sp.endDt && !isNaN(new Date(sp.endDt).getTime()) ? sp.endDt : todayStr
     
-    
-
     let error: number | null = null;
     let data: InboundItem[] = [];
 
@@ -98,7 +96,7 @@ export default async function DtinPage({ searchParams }: {
                     ) : (
                         <div>
                             조회 결과 {data.length}건
-                            <DataTable columns={columns} data={data}/>
+                            <DataTable columns={columns} data={data} renderSubRow={renderSubRow} />
                         </div>
                 )}
             </PageShell>
