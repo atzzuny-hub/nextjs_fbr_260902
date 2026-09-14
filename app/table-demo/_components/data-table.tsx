@@ -4,6 +4,7 @@ import { Fragment } from "react";
 import { useTable, type ColumnDef, type Row, type RowData } from "@tanstack/react-table";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { features, type DataTableFeatures } from "./data-table-features";
+import { Button } from "@/components/ui/button";
 
 interface DataTableProps<TData extends RowData> {
     columns: ColumnDef<DataTableFeatures, TData>[];
@@ -16,40 +17,54 @@ export function DataTable<TData extends RowData>({ columns, data, renderSubRow }
     const table = useTable({
         features, columns, data,
         getRowCanExpand: () => !!renderSubRow,   // 그릴 게 있을 때만 펼침 허용
+        initialState: {pagination: {pageIndex: 0, pageSize:3}}
     });
 
     return (
-        <Table>
-            <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) => (
-                    <TableRow key={headerGroup.id}>
-                        {headerGroup.headers.map((header) => (
-                            <TableHead key={header.id}>
-                                {header.isPlaceholder ? null : <table.FlexRender header={header} />}
-                            </TableHead>
-                        ))}
-                    </TableRow>
-                ))}
-            </TableHeader>
-            <TableBody>
-                {table.getRowModel().rows.map((row) => (
-                    // 행 하나가 <tr> 1~2개가 되므로 key는 묶음(Fragment)에
-                    <Fragment key={row.id}>
-                        <TableRow>
-                            {row.getAllCells().map((cell) => (
-                                <TableCell key={cell.id}>
-                                    <table.FlexRender cell={cell} />
-                                </TableCell>
+        <>
+            <Table>
+                <TableHeader>
+                    {table.getHeaderGroups().map((headerGroup) => (
+                        <TableRow key={headerGroup.id}>
+                            {headerGroup.headers.map((header) => (
+                                <TableHead key={header.id}>
+                                    {header.isPlaceholder ? null : <table.FlexRender header={header} />}
+                                </TableHead>
                             ))}
                         </TableRow>
-                        {row.getIsExpanded() && renderSubRow && (
+                    ))}
+                </TableHeader>
+                <TableBody>
+                    {table.getRowModel().rows.map((row) => (
+                        // 행 하나가 <tr> 1~2개가 되므로 key는 묶음(Fragment)에
+                        <Fragment key={row.id}>
                             <TableRow>
-                                <TableCell colSpan={row.getAllCells().length}>{renderSubRow(row)}</TableCell>
+                                {row.getAllCells().map((cell) => (
+                                    <TableCell key={cell.id}>
+                                        <table.FlexRender cell={cell} />
+                                    </TableCell>
+                                ))}
                             </TableRow>
-                        )}
-                    </Fragment>
-                ))}
-            </TableBody>
-        </Table>
+                            {row.getIsExpanded() && renderSubRow && (
+                                <TableRow>
+                                    <TableCell colSpan={row.getAllCells().length}>{renderSubRow(row)}</TableCell>
+                                </TableRow>
+                            )}
+                        </Fragment>
+                    ))}
+                </TableBody>
+            </Table>
+            <div className="flex items-center justify-end gap-2 py-4">
+                <Button variant="outline" size="sm"
+                    onClick={() => table.previousPage()}
+                    disabled={!table.getCanPreviousPage()}>이전</Button>
+                <span className="text-sm text-muted-foreground">
+                    {table.state.pagination.pageIndex + 1} / {table.getPageCount()}
+                </span>
+                <Button variant="outline" size="sm"
+                    onClick={() => table.nextPage()}
+                    disabled={!table.getCanNextPage()}>다음</Button>
+            </div>
+        </>
     );
 }
