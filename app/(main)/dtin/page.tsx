@@ -14,7 +14,7 @@ import { columns, renderSubRow } from "./columns";
 
 
 export default async function DtinPage({ searchParams }: {
-    searchParams: Promise<{ wmsLinkId?: string, startDt?:string, endDt?:string, searchDt:string, search?:string, status?:string }>;
+    searchParams: Promise<{ wmsLinkId?: string, startDt?:string, endDt?:string, searchDt:string, search?:string, status?:string,  page?: string, pageSize?: string  }>;
 }){
     const  sp  = await searchParams;
 
@@ -22,33 +22,38 @@ export default async function DtinPage({ searchParams }: {
 
     const startDate = sp.startDt && !isNaN(new Date(sp.startDt).getTime()) ? sp.startDt : weekAgoStr
     const endDate = sp.endDt && !isNaN(new Date(sp.endDt).getTime()) ? sp.endDt : todayStr
+
+   
+    const pageIndex = Math.max(0, (Number(sp.page) || 1) -1)
+    const pageSize = Number(sp.pageSize) || 100   
     
     let error: number | null = null;
     let data: InboundItem[] = [];
+    let rowCount = 0;
 
     if(sp.wmsLinkId){
-        const param = new URLSearchParams({
+        const params = new URLSearchParams({
             wmsLinkId: sp.wmsLinkId,
             startDt: String(toEpochSec(startDate)),          // → "1788..."
             endDt: String(toEpochSec(endDate) + 86399),      // → 그날 23:59:59까지 포함
             searchDt: sp.searchDt,
-            pageNo: "0",
-            pageSize: "300",
+            pageNo: String(pageIndex),
+            pageSize: String(pageSize)
         });
 
-        if (sp.search) param.set("search", sp.search);
-        if (sp.status && sp.status !== "ALL") param.set("status", sp.status);
+        if (sp.search) params.set("search", sp.search);
+        if (sp.status && sp.status !== "ALL") params.set("status", sp.status);
 
-        const res = await apiFetch(`/dtin?${param.toString()}`);
+        const [listRes, cntRes] = await Promise.all([
+            apiFetch(`/dtin?${params.toString()}`),
+            apiFetch(`/dtin/cnt?${params.toString()}`),
+        ]);
 
-        if (!res.ok) {
-            error = res.status;
-        } else {
-            data = await res.json();
-        }
+        if (!listRes.ok || !cntRes.ok) return <div>조회 실패</div>;
 
-
-    }     
+        data = await listRes.json();
+        rowCount = await cntRes.json();
+    }
 
     return(
         <div>
@@ -95,8 +100,8 @@ export default async function DtinPage({ searchParams }: {
                         <div>조회 실패 ({error})</div>
                     ) : (
                         <div>
-                            조회 결과 {data.length}건
-                            <DataTable columns={columns} data={data} renderSubRow={renderSubRow} />
+                            조회 결과 {rowCount}건
+                            <DataTable columns={columns} data={data} renderSubRow={renderSubRow} pageIndex={pageIndex} pageSize={pageSize} rowCount={rowCount} />
                         </div>
                 )}
             </PageShell>
