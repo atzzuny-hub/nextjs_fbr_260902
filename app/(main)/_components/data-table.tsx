@@ -6,6 +6,7 @@ import { features, type DataTableFeatures } from "./data-table-features";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Fragment } from "react";
 import { Button } from "@/components/ui/button";
+import CommonInput from "./common-input";
 
 
 interface DataTableProps<TData extends RowData>{
@@ -40,9 +41,19 @@ export function DataTable<TData extends RowData>({columns, data, pageIndex, page
             params.set("pageSize", String(next.pageSize));   
             router.push(`?${params.toString()}`);
         },
+        globalFilterFn: "includesString",        
 });
     return(
         <div className="flex min-h-0 flex-1 flex-col"> 
+            <div className="shrink-0">
+                <CommonInput
+                    name="globalFilter"
+                    label="화면에서 찾기"
+                    placeholder={`현재 ${data.length}건에서 찾기`}
+                    value={table.state.globalFilter ?? ""}
+                    onChange={(e) => table.setGlobalFilter(e.target.value)}
+                />
+            </div>
             <Table containerClassName="min-h-0 flex-1 overflow-auto">    
                 <TableHeader className="sticky top-0 z-10 bg-background">
                     {table.getHeaderGroups().map((headerGroup) => (
