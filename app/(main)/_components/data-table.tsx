@@ -42,9 +42,9 @@ export function DataTable<TData extends RowData>({columns, data, pageIndex, page
         },
 });
     return(
-        <>
-            <Table>
-                <TableHeader>
+        <div className="flex min-h-0 flex-1 flex-col"> 
+            <Table containerClassName="min-h-0 flex-1 overflow-auto">    
+                <TableHeader className="sticky top-0 z-10 bg-background">
                     {table.getHeaderGroups().map((headerGroup) => (
                     <TableRow key={headerGroup.id}>
                         {headerGroup.headers.map((header) => (
@@ -56,25 +56,35 @@ export function DataTable<TData extends RowData>({columns, data, pageIndex, page
                     ))}
                 </TableHeader>
                 <TableBody>
-                    {table.getRowModel().rows.map((row) => (
-                        <Fragment key={row.id}>
-                            <TableRow>
-                                {row.getAllCells().map((cell) => (
-                                    <TableCell key={cell.id}>
-                                        <table.FlexRender cell={cell} />
-                                    </TableCell>
-                                ))}
-                            </TableRow>
-                            {row.getIsExpanded() && renderSubRow && (
+                    {table.getRowModel().rows.length ? (
+                        table.getRowModel().rows.map((row) => (
+                            <Fragment key={row.id}>
                                 <TableRow>
-                                    <TableCell colSpan={row.getAllCells().length}>{renderSubRow(row)}</TableCell>
+                                    {row.getAllCells().map((cell) => (
+                                        <TableCell key={cell.id}>
+                                            <table.FlexRender cell={cell} />
+                                        </TableCell>
+                                    ))}
                                 </TableRow>
-                            )}
-                        </Fragment>
-                    ))}
+                                {row.getIsExpanded() && renderSubRow && (
+                                    <TableRow>
+                                        <TableCell colSpan={row.getAllCells().length}>{renderSubRow(row)}</TableCell>
+                                    </TableRow>
+                                )}
+                            </Fragment>
+                        ))
+                    ):(
+                        <TableRow>
+                            <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
+                                조회 결과가 없습니다
+                            </TableCell>
+                        </TableRow>
+                    )
+
+                    }
                 </TableBody>
             </Table>
-            <div>
+            <div className="shrink-0">
                 <select
                     value={pageSize}
                     onChange={(e) => table.setPageSize(Number(e.target.value))}
@@ -87,6 +97,6 @@ export function DataTable<TData extends RowData>({columns, data, pageIndex, page
                 <span>{pageIndex + 1} / {table.getPageCount()}</span>
                 <Button onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>Next</Button>
             </div>
-        </>
+        </div>
     )
 }

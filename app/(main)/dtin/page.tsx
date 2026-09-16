@@ -62,56 +62,54 @@ export default async function DtinPage({ searchParams }: {
     }
 
     return(
-        <div>
-            <PageShell
-                title={"입고현황"}
-                btnAct={
-                    <div className="flex gap-2">
-                        <Button variant='outline'>버튼1</Button>
-                        <Button variant='outline'>버튼2</Button>
+        <PageShell
+            title={"입고현황"}
+            btnAct={
+                <div className="flex gap-2">
+                    <Button variant='outline'>버튼1</Button>
+                    <Button variant='outline'>버튼2</Button>
+                </div>
+            }
+            search={
+                <SearchPanel 
+                    key={JSON.stringify(sp)}
+                    action='/dtin' 
+                    detailOpen={!!(sp.search || sp.status)} 
+                    detail={
+                        <>
+                            <CommonInput name="search" label="검색어" placeholder="검색어" defaultValue={sp.search} />
+                            <CommonSelect 
+                                name="status" 
+                                defaultValue={sp.status ? sp.status : "ALL"} 
+                                data={ORDER_STATUS_OPTIONS} 
+                                label={"입고상태"}
+                            />
+                        </>
+                    }
+                >
+                    <WmsLinkIdSelect defaultValue={sp.wmsLinkId}/>
+                    <DatePicker label='시작일' name='startDt' defaultValue={startDate}/>
+                    <DatePicker label='종료일' name='endDt' defaultValue={endDate}/>
+                    <CommonSelect 
+                        name="searchDt" 
+                        defaultValue={sp.searchDt ? sp.searchDt : "REQ_DT"} 
+                        placeholder={"기준일자 선택"}
+                        data={SEARCH_DT_OPTIONS} 
+                        label={"기준일자"}
+                    />
+                    
+                </SearchPanel>
+            }
+        >
+            {error ? (
+                    <div>조회 실패 ({error})</div>
+                ) : (
+                    <div className="flex min-h-0 flex-1 flex-col"> 
+                        조회 결과 {rowCount}건
+                        <DataTable columns={columns} data={data} renderSubRow={renderSubRow} pageIndex={pageIndex} pageSize={pageSize} rowCount={rowCount} />
                     </div>
-                }
-                search={
-                    <SearchPanel 
-                        key={JSON.stringify(sp)}
-                        action='/dtin' 
-                        detailOpen={!!(sp.search || sp.status)} 
-                        detail={
-                            <>
-                                <CommonInput name="search" label="검색어" placeholder="검색어" defaultValue={sp.search} />
-                                <CommonSelect 
-                                    name="status" 
-                                    defaultValue={sp.status ? sp.status : "ALL"} 
-                                    data={ORDER_STATUS_OPTIONS} 
-                                    label={"입고상태"}
-                                />
-                            </>
-                        }
-                    >
-                        <WmsLinkIdSelect defaultValue={sp.wmsLinkId}/>
-                        <DatePicker label='시작일' name='startDt' defaultValue={startDate}/>
-                        <DatePicker label='종료일' name='endDt' defaultValue={endDate}/>
-                        <CommonSelect 
-                            name="searchDt" 
-                            defaultValue={sp.searchDt ? sp.searchDt : "REQ_DT"} 
-                            placeholder={"기준일자 선택"}
-                            data={SEARCH_DT_OPTIONS} 
-                            label={"기준일자"}
-                        />
-                        
-                    </SearchPanel>
-                }
-            >
-                {error ? (
-                        <div>조회 실패 ({error})</div>
-                    ) : (
-                        <div>
-                            조회 결과 {rowCount}건
-                            <DataTable columns={columns} data={data} renderSubRow={renderSubRow} pageIndex={pageIndex} pageSize={pageSize} rowCount={rowCount} />
-                        </div>
-                )}
-            </PageShell>
-        </div>
+            )}
+        </PageShell>
     )
 }
 
