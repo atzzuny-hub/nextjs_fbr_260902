@@ -29,6 +29,15 @@ export function DataTable<TData extends RowData>({columns, data, pageIndex, page
 
     const scrollRef = useRef<HTMLDivElement>(null)
 
+    // 페이지 크기 변경 — setPageSize를 거치지 않고 URL만 바꾼다
+    const changePageSize = (next: number) => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("pageSize", String(next));
+        params.delete("page");            // 1페이지로 되돌린다
+        router.push(`?${params.toString()}`);
+    };
+
+
     const table = useTable({
         features, columns, data, 
         getRowCanExpand: () => !!renderSubRow,
@@ -39,9 +48,10 @@ export function DataTable<TData extends RowData>({columns, data, pageIndex, page
             const next = typeof updater === "function"
                 ? updater({ pageIndex, pageSize })
                 : updater;
-            const params = new URLSearchParams(searchParams);
+            const params = new URLSearchParams(searchParams.toString());
             params.set("page", String(next.pageIndex + 1));
-            params.set("pageSize", String(next.pageSize));   
+            // 이제 크기 변경은 changePageSize만 담당하니, 이전/다음 버튼이 pageSize를 건드릴 이유가 없다.
+            // params.set("pageSize", String(next.pageSize));   
             router.push(`?${params.toString()}`);
         },
         globalFilterFn: "includesString",        
@@ -132,7 +142,8 @@ export function DataTable<TData extends RowData>({columns, data, pageIndex, page
             <div className="shrink-0">
                 <select
                     value={pageSize}
-                    onChange={(e) => table.setPageSize(Number(e.target.value))}
+                    // onChange={(e) => table.setPageSize(Number(e.target.value))}
+                    onChange={(e) => changePageSize(Number(e.target.value))}
                 >
                     {PAGE_SIZE_SELECT.map((v) => (
                         <option key={v} value={v}>{v}</option>
