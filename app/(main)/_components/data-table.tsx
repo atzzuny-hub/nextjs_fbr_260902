@@ -4,9 +4,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useTable, ColumnDef, RowData, Row  } from "@tanstack/react-table";
 import { features, type DataTableFeatures } from "./data-table-features";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Fragment } from "react";
+import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import CommonInput from "./common-input";
+import { useVirtualizer } from "@tanstack/react-virtual";
 
 
 interface DataTableProps<TData extends RowData>{
@@ -18,13 +19,15 @@ interface DataTableProps<TData extends RowData>{
     rowCount: number    
 }
 
-const PAGE_SIZE_SELECT = [100, 200, 500, 1000]
+export const PAGE_SIZE_SELECT = [10, 20, 500, 1000]
 
 
 export function DataTable<TData extends RowData>({columns, data, pageIndex, pageSize, rowCount, renderSubRow}: DataTableProps<TData>){
 
     const router = useRouter();              
     const searchParams = useSearchParams();   
+
+    const scrollRef = useRef<HTMLDivElement>(null)
 
     const table = useTable({
         features, columns, data, 
@@ -42,7 +45,18 @@ export function DataTable<TData extends RowData>({columns, data, pageIndex, page
             router.push(`?${params.toString()}`);
         },
         globalFilterFn: "includesString",        
-});
+    });
+
+    const rows = table.getRowModel().rows;
+
+    const virtualizer = useVirtualizer({
+        count: rows.length,
+        getScrollElement: () => scrollRef.current,
+        estimateSize: () => 48,          // 행 하나의 예상 높이
+        getItemKey: (i) => rows[i].id,
+        overscan: 8,
+    });
+
     return(
         <div className="flex min-h-0 flex-1 flex-col"> 
             <div className="shrink-0">
@@ -54,45 +68,65 @@ export function DataTable<TData extends RowData>({columns, data, pageIndex, page
                     onChange={(e) => table.setGlobalFilter(e.target.value)}
                 />
             </div>
-            <Table containerClassName="min-h-0 flex-1 overflow-auto">    
+            <Table 
+                containerRef={scrollRef}
+                containerClassName="min-h-0 flex-1 overflow-auto"
+            >    
                 <TableHeader className="sticky top-0 z-10 bg-background">
                     {table.getHeaderGroups().map((headerGroup) => (
-                    <TableRow key={headerGroup.id}>
-                        {headerGroup.headers.map((header) => (
-                        <TableHead key={header.id}>
-                            {header.isPlaceholder ? null : <table.FlexRender header={header} />}
-                        </TableHead>
-                        ))}
-                    </TableRow>
+                        <TableRow key={headerGroup.id} style={{ display: "flex", width: table.getTotalSize() }}>
+                            {headerGroup.headers.map((header) => (
+                                <TableHead
+                                    key={header.id}
+                                    style={{ display: "flex", width: header.column.getSize() }}
+                                >
+                                    {header.isPlaceholder ? null : <table.FlexRender header={header} />}
+                                </TableHead>
+                            ))}
+                        </TableRow>
                     ))}
                 </TableHeader>
-                <TableBody>
-                    {table.getRowModel().rows.length ? (
-                        table.getRowModel().rows.map((row) => (
-                            <Fragment key={row.id}>
-                                <TableRow>
+
+                <TableBody style={{ display: "grid", height: virtualizer.getTotalSize(), position: "relative" }}>
+                    {rows.length ? (
+                        virtualizer.getVirtualItems().map((vi) => {
+                            const row = rows[vi.index];
+                            return (
+                                <TableRow
+                                    key={row.id}
+                                    data-index={vi.index}
+                                    ref={virtualizer.measureElement}
+                                    style={{
+                                        position: "absolute",
+                                        transform: `translateY(${vi.start}px)`,
+                                        display: "flex",
+                                        flexWrap: "wrap",
+                                        width: table.getTotalSize(),
+                                    }}
+                                >
                                     {row.getAllCells().map((cell) => (
-                                        <TableCell key={cell.id}>
+                                        <TableCell
+                                            key={cell.id}
+                                            style={{ display: "flex", width: cell.column.getSize() }}
+                                        >
                                             <table.FlexRender cell={cell} />
                                         </TableCell>
                                     ))}
+                                    {row.getIsExpanded() && renderSubRow && (
+                                        <TableCell style={{ width: "100%" }}>
+                                            {renderSubRow(row)}
+                                        </TableCell>
+                                    )}
                                 </TableRow>
-                                {row.getIsExpanded() && renderSubRow && (
-                                    <TableRow>
-                                        <TableCell colSpan={row.getAllCells().length}>{renderSubRow(row)}</TableCell>
-                                    </TableRow>
-                                )}
-                            </Fragment>
-                        ))
-                    ):(
+                            );
+                        })
+                    ) : (
                         <TableRow>
                             <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
                                 조회 결과가 없습니다
                             </TableCell>
                         </TableRow>
-                    )
-
-                    }
+                    )}
                 </TableBody>
             </Table>
             <div className="shrink-0">
