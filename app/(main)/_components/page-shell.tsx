@@ -1,6 +1,5 @@
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import Link from "next/link";
-import SearchPanel from "./search-panel";
 
 
 interface PageShellProps{
@@ -13,8 +12,8 @@ interface PageShellProps{
 
 export default function PageShell({title, btnAct, search, children}:PageShellProps){
     return(
-        <div>
-            <header className="border-b">
+        <div className="flex min-h-0 flex-1 flex-col"> 
+            <header className="border-b shrink-0">    
                 <Breadcrumb className="flex justify-end">
                     <BreadcrumbList>
                         <BreadcrumbItem>
@@ -38,9 +37,9 @@ export default function PageShell({title, btnAct, search, children}:PageShellPro
                 </div>
             </header>
             {search && (                
-                <div>{search}</div>
+                <div className="shrink-0">{search}</div>  
             )}
-            <div>
+            <div className="flex min-h-0 flex-1 flex-col">   
                 {children}
             </div>
         </div>
