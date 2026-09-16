@@ -37,8 +37,6 @@ export default async function DtinPage({ searchParams }: {
             startDt: String(toEpochSec(startDate)),          // → "1788..."
             endDt: String(toEpochSec(endDate) + 86399),      // → 그날 23:59:59까지 포함
             searchDt: sp.searchDt,
-            pageNo: String(pageIndex),
-            pageSize: String(pageSize)
         });
 
         if (sp.search) params.set("search", sp.search);
@@ -46,18 +44,18 @@ export default async function DtinPage({ searchParams }: {
 
         const [listRes, cntRes] = await Promise.all([
             apiFetch(`/dtin?${params.toString()}`),
-            apiFetch(`/dtin/cnt?${params.toString()}`),
+        const cntQuery = params.toString();
+        params.set("pageNo", String(pageIndex))
+        params.set("pageSize", String(pageSize))
+
+            apiFetch(`/dtin/cnt?${cntQuery}`),
         ]);
 
-        if (!listRes.ok || !cntRes.ok) return <div>조회 실패</div>;
-
-        data = await listRes.json();
-        rowCount = await cntRes.json();
-
-        if (!listRes.ok) {
-            error = listRes.status;
+        if (!listRes.ok || !cntRes.ok) {                
+            error = listRes.ok ? cntRes.status : listRes.status;
         } else {
-            data = data
+            data = await listRes.json();
+            rowCount = await cntRes.json();
         }
     }
 
