@@ -37,10 +37,10 @@ export const features = tableFeatures({
 ```
 
 ```ts
-// app/(main)/dtin/columns.tsx — 9개 컬럼 전부에
+// app/(main)/data/columns.tsx — 9개 컬럼 전부에
 { id: "expander", header: "", size: 48, cell: … },
-{ accessorKey: "ganNo", header: "주문번호", size: 160 },
-{ accessorKey: "status", header: "입고상태", size: 100, cell: … },
+{ accessorKey: "orderNo", header: "주문번호", size: 160 },
+{ accessorKey: "status", header: "배송상태", size: 100, cell: … },
 // ...
 ```
 
@@ -180,13 +180,117 @@ React 19는 HTML 중첩 규칙을 검사한다. `<td>`는 `<tr>`의 직계 자�
 2. 스크롤하면 행 내용이 바뀌고, 스크롤바 길이가 전체 건수에 맞는지
 3. 헤더와 본문 컬럼 줄이 맞는지 — 어긋나면 `size`를 빠뜨린 컬럼부터 의심
 4. `[+]` 눌러 펼치면 둘째 줄에 나오고 아래 행들이 밀리는지
-5. 전역 필터를 걸면 스크롤 높이가 같이 줄어드는지 (`count`가 `rows.length`인지 확인하는 방법)
+5. 행 모델이 바뀌면(필터 등) 스크롤 높이가 같이 바뀌는지 — `count`가 `data.length`가 아니라 `rows.length`인지 확인하는 방법
 6. 1,000개씩 보기로 첫 렌더 체감
 
 ## 남는 것
 
 **서버에서 1,000건을 받아 파싱하는 비용은 그대로다.** 가상화는 DOM만 줄인다. 조회 자체가 느리면 페이지 크기를 줄이는 게 답이다.
 
-**Ctrl+F가 안 먹는다.** 보이는 20행만 DOM에 있으니 브라우저 찾기가 나머지를 못 본다. 대신 전역 필터("화면에서 찾기")를 쓰면 되는데, 그건 DOM이 아니라 데이터를 보니 가상화와 무관하게 동작한다. 단 **원본 값 기준**이라 상태(`WORK`)·날짜(epoch)는 화면에 보이는 대로(`작업중`, `2026-09-16`) 찾아지지 않는다. 보이는 대로 찾게 하려면 `columns.tsx`에 `accessorFn`으로 표시용 문자열을 뽑아줘야 한다.
+**Ctrl+F는 DOM에 있는 행만 본다.** 보이는 20행 + `overscan` 8행씩이 검색 범위다. 스크롤해서 내려가면 새로 들어온 행이 대상이 된다. "눈에 보이는 것 안에서 하이라이트"가 필요한 범위였어서 이걸로 충분하다고 보고, 데이터를 보는 전역 필터("화면에서 찾기")는 빼기로 했다 — 원본 값 기준이라 상태(`SHIPPING`)·날짜(epoch)를 화면 글자(`배송중`, `2026-09-16`)로는 못 찾는 반쪽이기도 했다. 나중에 "페이지 전체(1,000건)에서 찾기"가 필요해지면 가상화 on/off 토글(끄면 Ctrl+F가 전부 봄)이나, 전역 필터를 되살리고 `columns.tsx`에 `accessorFn`으로 표시용 문자열을 뽑는 방법 중 하나다.
+
+**`useVirtualizer` 줄에 노란줄이 뜬다.** `react-hooks/incompatible-library` — React Compiler가 이 컴포넌트의 자동 메모이제이션을 건너뛴다는 안내다. `useVirtualizer()`가 돌려주는 `getVirtualItems()` 같은 함수는 스크롤마다 다른 답을 내야 해서 캐시하면 화면이 멈추고, TanStack이 그걸 표시해둔 걸 컴파일러가 읽은 것이다. 에러가 아니고 고칠 것도 없다.
 
 **펼친 행이 셀 10개짜리 행이 된다.** 화면상 문제는 없지만, 나중에 셀 단위 기능(셀 선택 등)을 붙일 때 고려할 지점이다.
+
+## 붙이고 나서 잡은 것
+
+기능을 붙이고 실제로 눌러보다 나온 버그들. 증상으로 찾을 수 있게 증상부터 적는다.
+
+### ① 페이지 크기를 바꾸면 빈 화면
+
+**증상** — 100개씩 3페이지를 보다가 셀렉트에서 10을 고르면 URL이 `?page=21&pageSize=10`이 되고 아무것도 안 나온다.
+
+**원인** — `table.setPageSize()`가 "보던 첫 행"을 기준으로 페이지를 다시 계산한다.
+
+```js
+const topRowIndex = old.pageSize * old.pageIndex;      // 100 × 2 = 200
+const pageIndex = Math.floor(topRowIndex / pageSize);  // 200 / 10 = 20 → 21페이지
+```
+
+클라이언트 방식에선 "보던 위치를 유지한다"는 똑똑한 동작인데, 서버 방식에선 139건짜리 목록에 21페이지를 요청하는 꼴이다.
+
+**수정** — `setPageSize`를 거치지 않는 함수를 따로 만들어 URL의 `pageSize`만 바꾸고 `page`를 지운다. 이전/다음 버튼(`onPaginationChange`)은 `page`만 바꾼다. 크기 변경과 페이지 이동이 다른 경로가 된다.
+
+```tsx
+const changePageSize = (next: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("pageSize", String(next));
+    params.delete("page");                 // 1페이지로
+    router.push(`?${params.toString()}`);
+};
+
+<select value={pageSize} onChange={(e) => changePageSize(Number(e.target.value))}>
+```
+
+**확인** — 3페이지에서 크기를 바꾸면 URL이 `?pageSize=10`이 되고 `page`가 사라져 1페이지부터 나온다.
+
+### ② 개수 API에 페이징 파라미터가 같이 나간다
+
+**증상** — 서버 로그에 `/data/cnt?…&pageNo=0&pageSize=10`. `/cnt` 스펙에는 `pageNo`·`pageSize`가 없다. 서버가 무시해줘서 숫자는 맞게 왔지만, 거기 의존하고 있었다.
+
+**원인** — `pageNo`·`pageSize`를 `new URLSearchParams({...})` 안에 처음부터 넣어놓고, 목록과 개수 요청이 같은 `params`를 썼다.
+
+**수정** — 조건을 다 만든 직후 문자열을 떠두고, 그 뒤에 목록용 페이징을 붙인다.
+
+```tsx
+const params = new URLSearchParams({ /* 조건만 */ });
+if (sp.search) params.set("search", sp.search);
+if (sp.status && sp.status !== "ALL") params.set("status", sp.status);
+
+const cntQuery = params.toString();          // 조건만 — /cnt용
+params.set("pageNo", String(pageIndex));     // 목록에만
+params.set("pageSize", String(pageSize));
+
+const [listRes, cntRes] = await Promise.all([
+    apiFetch(`/data?${params.toString()}`),
+    apiFetch(`/data/cnt?${cntQuery}`),
+]);
+```
+
+`toString()`은 **그 시점의 복사본 문자열**을 돌려준다. 그래서 뒤에 `params.set(...)`을 해도 `cntQuery`는 안 바뀐다. 변수 하나로 "조건만" 요청과 "조건 + 페이징" 요청을 만드는 방법이다.
+
+**확인** — 서버 로그에서 `/data/cnt?…`에 `pageNo`·`pageSize`가 없다.
+
+### ③ 조기 return이 검색 패널까지 지운다
+
+**증상** — API가 실패하면 `조회 실패` 글자만 있는 빈 화면. 헤더도 검색 패널도 없어서 조건을 고쳐 다시 조회할 방법이 없다.
+
+**원인** — 실패 시 `return <div>조회 실패</div>`로 **함수 전체를 빠져나가서** `<PageShell>` 바깥으로 나갔다. 그 아래에 있던 `if (!listRes.ok) { error = … }`는 도달했을 땐 항상 성공이라 죽은 코드였고, `data = data`는 자기 자신 대입이었다.
+
+**수정** — 조기 `return`을 없애고 `error`에 상태 코드를 담는다. 아래 `{error ? <div>조회 실패 ({error})</div> : <DataTable …/>}` 분기가 다시 살아난다 — 헤더·검색 패널은 그대로 두고 표 자리에만 실패를 표시한다. T-2 때 설계한 원래 흐름이다.
+
+```tsx
+if (!listRes.ok || !cntRes.ok) {
+    error = listRes.ok ? cntRes.status : listRes.status;   // 실패한 쪽의 코드
+} else {
+    data = await listRes.json();
+    rowCount = await cntRes.json();
+}
+```
+
+**확인** — `/data/cnt`를 잠깐 `/data/cntXX`로 바꿔보면 검색 패널은 남고 표 자리에 `조회 실패 (404)`가 뜬다. 확인 후 되돌린다.
+
+### ④ 페이지 크기 허용 목록
+
+**증상** — 주소창에 `?pageSize=999999`를 치면 그대로 서버에 `pageSize=999999`가 나간다.
+
+**원인** — `Number(sp.pageSize) || 10`은 "빈 값이면 10"일 뿐, 숫자면 뭐든 통과시킨다. `pageNo`는 `Number.isInteger`로 검사했는데 페이지 크기는 "정수냐"가 아니라 **"우리가 정한 값 중 하나냐"**가 조건이라 검사 방식이 달라야 했다.
+
+**수정** — 셀렉트 목록을 공용 상수 파일로 빼서 그 배열이 허용 목록 역할까지 하게 한다. `page.tsx`는 검증에, `data-table.tsx`는 셀렉트에 같은 배열을 쓴다.
+
+```ts
+// app/(main)/_components/data-table-options.ts — "use client" 없는 순수 상수
+export const PAGE_SIZE_OPTIONS = [10, 20, 500, 1000];
+export const DEFAULT_PAGE_SIZE = 10;
+```
+
+```tsx
+// page.tsx
+const parsedSize = Number(sp.pageSize);
+const pageSize = PAGE_SIZE_OPTIONS.includes(parsedSize) ? parsedSize : DEFAULT_PAGE_SIZE;
+```
+
+목록을 `data-table.tsx`("use client")에 두고 `page.tsx`가 import하면 **서버 컴포넌트가 클라이언트 모듈을 읽는 방향**이 된다. 상수라 동작은 하지만 T-2에서 세운 경계와 반대라 중립 파일로 뺐다. `data-table-features.ts`와 같은 성격의 파일이다.
+
+**확인** — `?pageSize=999999` → 서버 로그에 `pageSize=10`. `?pageSize=500` → 500건. 셀렉트 목록은 그대로 네 개.
