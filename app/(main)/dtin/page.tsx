@@ -77,7 +77,12 @@ export default async function DtinPage({ searchParams }: {
                     detailOpen={!!(sp.search || sp.status)} 
                     detail={
                         <>
-                            <CommonInput name="search" label="검색어" placeholder="검색어" defaultValue={sp.search} />
+                            <CommonInput 
+                                name="search" 
+                                label="검색어"
+                                placeholder="검색어" 
+                                defaultValue={sp.search} 
+                            />
                             <CommonSelect 
                                 name="status" 
                                 defaultValue={sp.status ? sp.status : "ALL"} 
