@@ -25,7 +25,7 @@ export default async function DtinPage({ searchParams }: {
 
    
     const pageIndex = Math.max(0, (Number(sp.page) || 1) -1)
-    const pageSize = Number(sp.pageSize) || 100   
+    const pageSize = Number(sp.pageSize) || 10  
     
     let error: number | null = null;
     let data: InboundItem[] = [];
