@@ -11,6 +11,7 @@ import CommonInput from "../_components/common-input";
 import { ORDER_STATUS_OPTIONS, SEARCH_DT_OPTIONS } from "./options";
 import { DataTable } from "../_components/data-table";
 import { columns, renderSubRow } from "./columns";
+import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from "../_components/data-table-options";
 
 
 export default async function DtinPage({ searchParams }: {
@@ -25,7 +26,8 @@ export default async function DtinPage({ searchParams }: {
 
    
     const pageIndex = Math.max(0, (Number(sp.page) || 1) -1)
-    const pageSize = Number(sp.pageSize) || 10  
+    const parsedSize = Number(sp.pageSize);
+    const pageSize = PAGE_SIZE_OPTIONS.includes(parsedSize) ? parsedSize : DEFAULT_PAGE_SIZE;
     
     let error: number | null = null;
     let data: InboundItem[] = [];
@@ -42,12 +44,12 @@ export default async function DtinPage({ searchParams }: {
         if (sp.search) params.set("search", sp.search);
         if (sp.status && sp.status !== "ALL") params.set("status", sp.status);
 
-        const [listRes, cntRes] = await Promise.all([
-            apiFetch(`/dtin?${params.toString()}`),
         const cntQuery = params.toString();
         params.set("pageNo", String(pageIndex))
         params.set("pageSize", String(pageSize))
 
+        const [listRes, cntRes] = await Promise.all([
+            apiFetch(`/dtin?${params.toString()}`),
             apiFetch(`/dtin/cnt?${cntQuery}`),
         ]);
 

@@ -8,6 +8,7 @@ import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import CommonInput from "./common-input";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { PAGE_SIZE_OPTIONS } from "./data-table-options";
 
 
 interface DataTableProps<TData extends RowData>{
@@ -18,8 +19,6 @@ interface DataTableProps<TData extends RowData>{
     pageSize: number    
     rowCount: number    
 }
-
-export const PAGE_SIZE_SELECT = [10, 20, 500, 1000]
 
 
 export function DataTable<TData extends RowData>({columns, data, pageIndex, pageSize, rowCount, renderSubRow}: DataTableProps<TData>){
@@ -50,8 +49,6 @@ export function DataTable<TData extends RowData>({columns, data, pageIndex, page
                 : updater;
             const params = new URLSearchParams(searchParams.toString());
             params.set("page", String(next.pageIndex + 1));
-            // 이제 크기 변경은 changePageSize만 담당하니, 이전/다음 버튼이 pageSize를 건드릴 이유가 없다.
-            // params.set("pageSize", String(next.pageSize));   
             router.push(`?${params.toString()}`);
         },
         globalFilterFn: "includesString",        
@@ -142,10 +139,9 @@ export function DataTable<TData extends RowData>({columns, data, pageIndex, page
             <div className="shrink-0">
                 <select
                     value={pageSize}
-                    // onChange={(e) => table.setPageSize(Number(e.target.value))}
                     onChange={(e) => changePageSize(Number(e.target.value))}
                 >
-                    {PAGE_SIZE_SELECT.map((v) => (
+                    {PAGE_SIZE_OPTIONS.map((v) => (
                         <option key={v} value={v}>{v}</option>
                     ))}
                 </select>
