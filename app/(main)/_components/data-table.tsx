@@ -1,13 +1,15 @@
 "use client"
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useTable, ColumnDef, RowData, Row  } from "@tanstack/react-table";
+import { useTable, ColumnDef, RowData, Row, ColumnSizingState  } from "@tanstack/react-table";
 import { features, type DataTableFeatures } from "./data-table-features";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Fragment, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { PAGE_SIZE_OPTIONS } from "./data-table-options";
+import { useLocalStorageState } from "@/lib/use-local-storage";
+import { cn } from "@/lib/utils";
 
 
 interface DataTableProps<TData extends RowData>{
@@ -16,17 +18,22 @@ interface DataTableProps<TData extends RowData>{
     renderSubRow?: (row: Row<DataTableFeatures, TData>) => React.ReactNode;   // 펼친 행 아래 내용
     pageIndex: number,
     pageSize: number    
-    rowCount: number    
+    rowCount: number,  
+    storageKey?: string  
 }
 
+const NO_SIZING: ColumnSizingState = {};
 
-export function DataTable<TData extends RowData>({columns, data, pageIndex, pageSize, rowCount, renderSubRow}: DataTableProps<TData>){
+export function DataTable<TData extends RowData>({columns, data, pageIndex, pageSize, rowCount, renderSubRow, storageKey}: DataTableProps<TData>){
 
     const router = useRouter();              
     const searchParams = useSearchParams();   
 
     const scrollRef = useRef<HTMLDivElement>(null)
     const [virtual, setVirtual] = useState(true);    // 기본은 켬 — 성능이 기본값
+
+    const [columnSizing, saveColumnSizing, clearColumnSizing] =
+     useLocalStorageState<ColumnSizingState>(`${storageKey ?? "table"}: columnSizing`, NO_SIZING);
 
     // 페이지 크기 변경 — setPageSize를 거치지 않고 URL만 바꾼다
     const changePageSize = (next: number) => {
@@ -42,10 +49,15 @@ export function DataTable<TData extends RowData>({columns, data, pageIndex, page
         getRowCanExpand: () => !!renderSubRow,
         manualPagination:true,
         rowCount,
-        state: {pagination: {pageIndex, pageSize}},
+        columnResizeMode: "onChange",
+        state: {pagination: {pageIndex, pageSize}, columnSizing},
+        onColumnSizingChange: (updater) => {
+            const next = typeof updater === "function" ? updater(columnSizing) : updater;
+            saveColumnSizing(next);
+        },
         onPaginationChange: (updater) => {
-            const next = typeof updater === "function"
-                ? updater({ pageIndex, pageSize })
+            const next = typeof updater === "function" ? 
+                updater({ pageIndex, pageSize })
                 : updater;
             const params = new URLSearchParams(searchParams.toString());
             params.set("page", String(next.pageIndex + 1));
@@ -68,18 +80,17 @@ export function DataTable<TData extends RowData>({columns, data, pageIndex, page
     return(
         <div className="flex min-h-0 flex-1 flex-col space-y-2">
             {/* 1. 상단 토글 컨트롤러 */}
-            <div className="flex shrink-0 items-center justify-between pb-2">
-                <span className="text-sm text-muted-foreground">
-                    {virtual ? "보이는 행만 그림 — 빠름" : `${rows.length}행 전부 그림 — Ctrl+F 가능`}
-                </span>
+            <div className="flex shrink-0 items-center justify-end pb-2 gap-2">
+                <Button variant="outline" size="sm" onClick={clearColumnSizing}>열 너비 초기화</Button>
                 <Button variant="outline" size="sm" onClick={() => setVirtual((v) => !v)}>
                     {virtual ? "전체 렌더로 (Ctrl+F)" : "가상 스크롤로"}
                 </Button>
             </div>
             <Table 
-                style={{ 
-                    minWidth: virtual ? table.getTotalSize() : undefined 
-                }}
+                className={virtual ? undefined : "table-fixed"}
+                style={virtual
+                    ? { minWidth: table.getTotalSize() }
+                    : { width: table.getTotalSize() }}
                 containerRef={scrollRef}
                 containerClassName="min-h-0 flex-1 overflow-auto"
             >    
@@ -93,14 +104,22 @@ export function DataTable<TData extends RowData>({columns, data, pageIndex, page
                         {headerGroup.headers.map((header) => (
                         <TableHead
                             key={header.id}
-                            style={virtual ? { 
-                                display: "flex", 
-                                width: header.column.getSize(),
-                                flex: `${header.column.getSize()} 1 0px`, 
-                                minWidth: header.column.getSize(),        
-                            } : undefined}
+                            className="relative"
+                            style={virtual
+                                ? { display: "flex", width: header.column.getSize(), flex: "0 0 auto" }
+                                : { width: header.column.getSize() }}
                         >
                             {header.isPlaceholder ? null : <table.FlexRender header={header} />}
+                            {header.column.getCanResize() && (
+                                <div
+                                    onMouseDown={header.getResizeHandler()}
+                                    onTouchStart={header.getResizeHandler()}
+                                    className={cn(
+                                        "absolute right-0 top-0 h-full w-1.5 cursor-col-resize select-none touch-none",
+                                        header.column.getIsResizing() ? "bg-primary" : "hover:bg-border"
+                                    )}
+                                />
+                            )}
                         </TableHead>
                         ))}
                     </TableRow>
@@ -143,8 +162,7 @@ export function DataTable<TData extends RowData>({columns, data, pageIndex, page
                                     style={{ 
                                         display: "flex",
                                         width: cell.column.getSize(),
-                                        flex: `${cell.column.getSize()} 1 0px`, // 기본 size를 비율(flex-grow)로 사용하여 꽉 채움
-                                        minWidth: cell.column.getSize(),        // 설정한 size 이하로는 안 줄어듦
+                                        flex: "0 0 auto",
                                     }}
                                 >
                                     <table.FlexRender cell={cell} />
@@ -187,48 +205,6 @@ export function DataTable<TData extends RowData>({columns, data, pageIndex, page
                         )}
                     </TableBody>
                 )}
-
-                {/* <TableBody style={{ display: "grid", height: virtualizer.getTotalSize(), position: "relative" }}>
-                    {rows.length ? (
-                        virtualizer.getVirtualItems().map((vi) => {
-                            const row = rows[vi.index];
-                            return (
-                                <TableRow
-                                    key={row.id}
-                                    data-index={vi.index}
-                                    ref={virtualizer.measureElement}
-                                    style={{
-                                        position: "absolute",
-                                        transform: `translateY(${vi.start}px)`,
-                                        display: "flex",
-                                        flexWrap: "wrap",
-                                        width: table.getTotalSize(),
-                                    }}
-                                >
-                                    {row.getAllCells().map((cell) => (
-                                        <TableCell
-                                            key={cell.id}
-                                            style={{ display: "flex", width: cell.column.getSize() }}
-                                        >
-                                            <table.FlexRender cell={cell} />
-                                        </TableCell>
-                                    ))}
-                                    {row.getIsExpanded() && renderSubRow && (
-                                        <TableCell style={{ width: "100%" }}>
-                                            {renderSubRow(row)}
-                                        </TableCell>
-                                    )}
-                                </TableRow>
-                            );
-                        })
-                    ) : (
-                        <TableRow>
-                            <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
-                                조회 결과가 없습니다
-                            </TableCell>
-                        </TableRow>
-                    )}
-                </TableBody> */}
             </Table>
             <div className="shrink-0">
                 <select

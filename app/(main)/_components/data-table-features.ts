@@ -1,4 +1,4 @@
-import { columnSizingFeature, createExpandedRowModel, createPaginatedRowModel, rowExpandingFeature, rowPaginationFeature, tableFeatures } from "@tanstack/react-table";
+import { columnResizingFeature, columnSizingFeature, createExpandedRowModel, createPaginatedRowModel, rowExpandingFeature, rowPaginationFeature, tableFeatures } from "@tanstack/react-table";
 
 export const features = tableFeatures({
     rowExpandingFeature,
@@ -6,6 +6,7 @@ export const features = tableFeatures({
     rowPaginationFeature,
     paginatedRowModel: createPaginatedRowModel(),  
 
-    columnSizingFeature 
+    columnSizingFeature,
+    columnResizingFeature
 })
 export type DataTableFeatures = typeof features
