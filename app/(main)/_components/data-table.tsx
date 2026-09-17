@@ -62,6 +62,7 @@ export function DataTable<TData extends RowData>({columns, data, pageIndex, page
         getItemKey: (i) => rows[i].id,
         overscan: 8,
         enabled: virtual,  // ← 꺼지면 계산을 멈춘다
+        initialOffset: () => scrollRef.current?.scrollTop ?? 0,
     });
 
     return(
