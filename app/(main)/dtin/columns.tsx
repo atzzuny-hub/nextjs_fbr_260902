@@ -21,15 +21,15 @@ const flag = (cc: string) =>
 
 
 export const columns: ColumnDef<DataTableFeatures, InboundItem>[] = [
-    { id: "expander", header: "", size: 48,
+    { id: "expander", header: "", size: 48, enableResizing: false,
         cell: ({ row }) => (
             <Button variant="ghost" size="icon-sm" onClick={row.getToggleExpandedHandler()} aria-label="상세 펼치기">
                 {row.getIsExpanded() ? <Minus /> : <Plus />}
             </Button>
         ),
     },
-    { accessorKey: "ganNo", header: "주문번호" , size: 160 },  
-    { accessorKey: "dataId", header: "접수번호" , size: 160 },  
+    { accessorKey: "ganNo", header: "주문번호" , size: 200 },  
+    { accessorKey: "dataId", header: "접수번호" , size: 200 },  
     { accessorKey: "status", header: "입고상태", size: 100,
         cell: ({row}) => {
             const s = row.original.status;  
@@ -42,14 +42,14 @@ export const columns: ColumnDef<DataTableFeatures, InboundItem>[] = [
             return <>{flag(s)} {s}</>
         }
      },  
-    { accessorKey: "reqDt", header: "입고접수일", size: 120,
+    { accessorKey: "reqDt", header: "입고접수일", size: 140,
         cell:({row})=>formatDateTime(row.original.reqDt)
      },  
-    { accessorKey: "arvDt", header: "창고도착일", size: 120,
+    { accessorKey: "arvDt", header: "창고도착일", size: 140,
         cell: ({ row }) => formatDateTime(row.original.arvDt) 
     },
     { accessorKey: "wmsLinkName", header: "WMS Link", size: 140 },
-    { accessorKey: "dataUpdDt", header: "입고완료일", size: 120,
+    { accessorKey: "dataUpdDt", header: "입고완료일", size: 140,
         cell: ({ row }) => formatDateTime(row.original.dataUpdDt) 
      }
 ]

@@ -15,7 +15,16 @@ import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from "../_components/data-table-
 
 
 export default async function DtinPage({ searchParams }: {
-    searchParams: Promise<{ wmsLinkId?: string, startDt?:string, endDt?:string, searchDt:string, search?:string, status?:string,  page?: string, pageSize?: string  }>;
+    searchParams: Promise<{ 
+        wmsLinkId?: string, 
+        startDt?:string, 
+        endDt?:string, 
+        searchDt:string, 
+        search?:string, 
+        status?:string,  
+        page?: string, 
+        pageSize?: string,
+  }>;
 }){
     const  sp  = await searchParams;
 
@@ -111,7 +120,15 @@ export default async function DtinPage({ searchParams }: {
                 ) : (
                     <div className="flex min-h-0 flex-1 flex-col"> 
                         조회 결과 {rowCount}건
-                        <DataTable columns={columns} data={data} renderSubRow={renderSubRow} pageIndex={pageIndex} pageSize={pageSize} rowCount={rowCount} />
+                        <DataTable 
+                            columns={columns} 
+                            data={data} 
+                            renderSubRow={renderSubRow} 
+                            pageIndex={pageIndex} 
+                            pageSize={pageSize} 
+                            rowCount={rowCount} 
+                            storageKey="dtin"
+                        />
                     </div>
             )}
         </PageShell>
