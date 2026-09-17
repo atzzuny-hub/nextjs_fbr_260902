@@ -78,7 +78,6 @@ export function DataTable<TData extends RowData>({columns, data, pageIndex, page
             </div>
             <Table 
                 style={{ 
-                    width: virtual ? "100%" : "100%", 
                     minWidth: virtual ? table.getTotalSize() : undefined 
                 }}
                 containerRef={scrollRef}
@@ -112,81 +111,81 @@ export function DataTable<TData extends RowData>({columns, data, pageIndex, page
                 {/* 본문: virtual 모드와 일반 전체 렌더링 모드 분기 */}
                 {virtual ? (
                 /* ================= [모드 A] 가상화 렌더링 ================= */
-                <TableBody
-                    style={{
-                        display: "grid",
-                        height: virtualizer.getTotalSize(),
-                        position: "relative",
-                        width: "100%",
-                        minWidth: table.getTotalSize(),
-                    }}
-                >
-                    {rows.length ? (
-                    virtualizer.getVirtualItems().map((vi) => {
-                        const row = rows[vi.index];
-                        return (
-                        <TableRow
-                            key={row.id}
-                            data-index={vi.index}
-                            ref={virtualizer.measureElement}
-                            style={{
-                                position: "absolute",
-                                transform: `translateY(${vi.start}px)`,
-                                display: "flex",
-                                flexWrap: "wrap",
-                                width: "100%",
-                                minWidth: table.getTotalSize(),
-                            }}
-                        >
-                            {row.getAllCells().map((cell) => (
-                            <TableCell
-                                key={cell.id}
-                                style={{ 
+                    <TableBody
+                        style={{
+                            display: "grid",
+                            height: virtualizer.getTotalSize(),
+                            position: "relative",
+                            width: "100%",
+                            minWidth: table.getTotalSize(),
+                        }}
+                    >
+                        {rows.length ? (
+                        virtualizer.getVirtualItems().map((vi) => {
+                            const row = rows[vi.index];
+                            return (
+                            <TableRow
+                                key={row.id}
+                                data-index={vi.index}
+                                ref={virtualizer.measureElement}
+                                style={{
+                                    position: "absolute",
+                                    transform: `translateY(${vi.start}px)`,
                                     display: "flex",
-                                    width: cell.column.getSize(),
-                                    flex: `${cell.column.getSize()} 1 0px`, // 기본 size를 비율(flex-grow)로 사용하여 꽉 채움
-                                    minWidth: cell.column.getSize(),        // 설정한 size 이하로는 안 줄어듦
+                                    flexWrap: "wrap",
+                                    width: "100%",
+                                    minWidth: table.getTotalSize(),
                                 }}
                             >
-                                <table.FlexRender cell={cell} />
-                            </TableCell>
-                            ))}
-                            {row.getIsExpanded() && renderSubRow && (
-                            <TableCell style={{ width: "100%" }}>{renderSubRow(row)}</TableCell>
-                            )}
-                        </TableRow>
-                        );
-                    })
-                    ) : (
-                    <EmptyRow colSpan={columns.length} />
-                    )}
-                </TableBody>
-                ) : (
-                /* ================= [모드 B] 전체 DOM 렌더링 (Ctrl+F 지원) ================= */
-                <TableBody>
-                    {rows.length ? (
-                    rows.map((row) => (
-                        <Fragment key={row.id}>
-                        <TableRow>
-                            {row.getAllCells().map((cell) => (
-                            <TableCell key={cell.id}>
-                                <table.FlexRender cell={cell} />
-                            </TableCell>
-                            ))}
-                        </TableRow>
-                        {row.getIsExpanded() && renderSubRow && (
-                            <TableRow>
-                            <TableCell colSpan={row.getAllCells().length}>
-                                {renderSubRow(row)}
-                            </TableCell>
+                                {row.getAllCells().map((cell) => (
+                                <TableCell
+                                    key={cell.id}
+                                    style={{ 
+                                        display: "flex",
+                                        width: cell.column.getSize(),
+                                        flex: `${cell.column.getSize()} 1 0px`, // 기본 size를 비율(flex-grow)로 사용하여 꽉 채움
+                                        minWidth: cell.column.getSize(),        // 설정한 size 이하로는 안 줄어듦
+                                    }}
+                                >
+                                    <table.FlexRender cell={cell} />
+                                </TableCell>
+                                ))}
+                                {row.getIsExpanded() && renderSubRow && (
+                                <TableCell style={{ width: "100%" }}>{renderSubRow(row)}</TableCell>
+                                )}
                             </TableRow>
+                            );
+                        })
+                        ) : (
+                            <EmptyRow colSpan={columns.length} />
                         )}
-                        </Fragment>
-                    ))
+                    </TableBody>
                     ) : (
-                    <EmptyRow colSpan={columns.length} />
-                    )}
-                </TableBody>
+                    /* ================= [모드 B] 전체 DOM 렌더링 (Ctrl+F 지원) ================= */
+                    <TableBody>
+                        {rows.length ? (
+                        rows.map((row) => (
+                            <Fragment key={row.id}>
+                            <TableRow>
+                                {row.getAllCells().map((cell) => (
+                                <TableCell key={cell.id}>
+                                    <table.FlexRender cell={cell} />
+                                </TableCell>
+                                ))}
+                            </TableRow>
+                            {row.getIsExpanded() && renderSubRow && (
+                                <TableRow>
+                                <TableCell colSpan={row.getAllCells().length}>
+                                    {renderSubRow(row)}
+                                </TableCell>
+                                </TableRow>
+                            )}
+                            </Fragment>
+                        ))
+                        ) : (
+                        <EmptyRow colSpan={columns.length} />
+                        )}
+                    </TableBody>
                 )}
 
                 {/* <TableBody style={{ display: "grid", height: virtualizer.getTotalSize(), position: "relative" }}>
