@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useTable, ColumnDef, RowData, Row, ColumnSizingState  } from "@tanstack/react-table";
+import { useTable, ColumnDef, RowData, Row, ColumnSizingState, SortingState  } from "@tanstack/react-table";
 import { features, type DataTableFeatures } from "./data-table-features";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Fragment, useRef, useState } from "react";
@@ -10,6 +10,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { PAGE_SIZE_OPTIONS } from "./data-table-options";
 import { useLocalStorageState } from "@/lib/use-local-storage";
 import { cn } from "@/lib/utils";
+import { ArrowUp, ArrowDown } from "lucide-react";
 
 
 interface DataTableProps<TData extends RowData>{
@@ -19,7 +20,8 @@ interface DataTableProps<TData extends RowData>{
     pageIndex: number,
     pageSize: number    
     rowCount: number,  
-    storageKey?: string  
+    storageKey?: string  ,
+    
 }
 
 const NO_SIZING: ColumnSizingState = {};
@@ -30,7 +32,8 @@ export function DataTable<TData extends RowData>({columns, data, pageIndex, page
     const searchParams = useSearchParams();   
 
     const scrollRef = useRef<HTMLDivElement>(null)
-    const [virtual, setVirtual] = useState(true);    // 기본은 켬 — 성능이 기본값
+    const [virtual, setVirtual] = useState(true);  
+    const [sorting, setSorting] = useState<SortingState>([]);
 
     const [columnSizing, saveColumnSizing, clearColumnSizing] =
      useLocalStorageState<ColumnSizingState>(`${storageKey ?? "table"}: columnSizing`, NO_SIZING);
@@ -50,7 +53,10 @@ export function DataTable<TData extends RowData>({columns, data, pageIndex, page
         manualPagination:true,
         rowCount,
         columnResizeMode: "onChange",
-        state: {pagination: {pageIndex, pageSize}, columnSizing},
+        // state: {pagination: {pageIndex, pageSize}, columnSizing},
+        state: {pagination: {pageIndex, pageSize}, columnSizing, sorting},
+        onSortingChange: setSorting,
+        enableMultiSort: false,          // 컬럼 하나씩. Shift 클릭 다중 정렬은 끈다
         onColumnSizingChange: (updater) => {
             const next = typeof updater === "function" ? updater(columnSizing) : updater;
             saveColumnSizing(next);
@@ -82,6 +88,7 @@ export function DataTable<TData extends RowData>({columns, data, pageIndex, page
             {/* 1. 상단 토글 컨트롤러 */}
             <div className="flex shrink-0 items-center justify-end pb-2 gap-2">
                 <Button variant="outline" size="sm" onClick={clearColumnSizing}>열 너비 초기화</Button>
+                <Button variant="outline" size="sm" onClick={() => table.resetSorting(true)}>정렬 초기화</Button>
                 <Button variant="outline" size="sm" onClick={() => setVirtual((v) => !v)}>
                     {virtual ? "전체 렌더로 (Ctrl+F)" : "가상 스크롤로"}
                 </Button>
@@ -109,7 +116,19 @@ export function DataTable<TData extends RowData>({columns, data, pageIndex, page
                                 ? { display: "flex", width: header.column.getSize(), flex: "0 0 auto" }
                                 : { width: header.column.getSize() }}
                         >
-                            {header.isPlaceholder ? null : <table.FlexRender header={header} />}
+                            {/* {header.isPlaceholder ? null : <table.FlexRender header={header} />} */}
+                            {header.isPlaceholder ? null : 
+                                <button
+                                    type="button"
+                                    onClick={header.column.getToggleSortingHandler()}
+                                    disabled={!header.column.getCanSort()}
+                                    className="flex items-center gap-1"
+                                >
+                                    <table.FlexRender header={header} />
+                                    {header.column.getIsSorted() === "asc" && <ArrowUp className="size-3.5" />}
+                                    {header.column.getIsSorted() === "desc" && <ArrowDown className="size-3.5" />}
+                                </button>
+                            }
                             {header.column.getCanResize() && (
                                 <div
                                     onMouseDown={header.getResizeHandler()}
